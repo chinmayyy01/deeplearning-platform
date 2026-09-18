@@ -1,7 +1,6 @@
 import pytest
 import app.services.modal_service
 import app.pipeline.nodes.neural_network_node
-import app.pipeline.nodes.dataset_node
 
 
 def _zeros_3d(n, h, w):
@@ -53,42 +52,6 @@ def _fake_train(architecture, input_data, config):
 
 @pytest.fixture(autouse=True)
 def mock_modal_service(monkeypatch):
-    def mock_get_mnist(max_samples=2000):
-        return {
-            "X": _zeros_3d(max_samples, 28, 28),
-            "y": [i % 10 for i in range(max_samples)],
-            "dataset_name": "mnist",
-            "task_type": "classification",
-            "data_format": "image",
-            "image_channels": 1,
-            "image_height": 28,
-            "image_width": 28,
-        }
-
-    def mock_get_fashion_mnist(max_samples=2000):
-        return {
-            "X": _zeros_3d(max_samples, 28, 28),
-            "y": [i % 10 for i in range(max_samples)],
-            "dataset_name": "fashion_mnist",
-            "task_type": "classification",
-            "data_format": "image",
-            "image_channels": 1,
-            "image_height": 28,
-            "image_width": 28,
-        }
-
-    def mock_get_cifar10(max_samples=2000):
-        return {
-            "X": _zeros_4d(max_samples, 32, 32, 3),
-            "y": [i % 10 for i in range(max_samples)],
-            "dataset_name": "cifar10",
-            "task_type": "classification",
-            "data_format": "image",
-            "image_channels": 3,
-            "image_height": 32,
-            "image_width": 32,
-        }
-
     def mock_run_mlp(input_data, config):
         return _fake_train("mlp", input_data, config)
 
@@ -134,9 +97,6 @@ def mock_modal_service(monkeypatch):
             train_config,
         )
 
-    monkeypatch.setattr(app.services.modal_service, "get_mnist", mock_get_mnist)
-    monkeypatch.setattr(app.services.modal_service, "get_fashion_mnist", mock_get_fashion_mnist)
-    monkeypatch.setattr(app.services.modal_service, "get_cifar10", mock_get_cifar10)
     monkeypatch.setattr(app.services.modal_service, "run_mlp", mock_run_mlp)
     monkeypatch.setattr(app.services.modal_service, "run_cnn", mock_run_cnn)
     monkeypatch.setattr(app.services.modal_service, "run_split_and_train_mlp", mock_run_split_and_train_mlp)
@@ -146,7 +106,3 @@ def mock_modal_service(monkeypatch):
     monkeypatch.setattr(app.pipeline.nodes.neural_network_node, "run_cnn", mock_run_cnn)
     monkeypatch.setattr(app.pipeline.nodes.neural_network_node, "run_split_and_train_mlp", mock_run_split_and_train_mlp)
     monkeypatch.setattr(app.pipeline.nodes.neural_network_node, "run_split_and_train_cnn", mock_run_split_and_train_cnn)
-
-    monkeypatch.setattr(app.pipeline.nodes.dataset_node, "get_mnist", mock_get_mnist)
-    monkeypatch.setattr(app.pipeline.nodes.dataset_node, "get_fashion_mnist", mock_get_fashion_mnist)
-    monkeypatch.setattr(app.pipeline.nodes.dataset_node, "get_cifar10", mock_get_cifar10)

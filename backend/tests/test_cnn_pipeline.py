@@ -4,42 +4,11 @@ from app.pipeline.error_handler import PipelineError
 from app.pipeline.executor import run_pipeline
 from app.pipeline.generators.dataset_generator import generate_dataset_code
 from app.pipeline.generators.neural_network_generator import generate_neural_network_code
-from app.pipeline.nodes import dataset_node
+from app.pipeline.nodes import neural_network_node
 from app.pipeline.nodes.dataset_node import run as run_dataset
-
-
-def _make_mock_image_data(dataset_name, data_shape):
-    channels = data_shape[3] if len(data_shape) == 4 else 1
-    height = data_shape[1]
-    width = data_shape[2]
-    num_samples = data_shape[0]
-
-    if len(data_shape) == 4:
-        X = [[[[float((i + r + c + ch) % 255) for ch in range(channels)]
-               for c in range(width)]
-              for r in range(height)]
-             for i in range(num_samples)]
-    else:
-        X = [[[float((i + r + c) % 255) for c in range(width)]
-              for r in range(height)]
-             for i in range(num_samples)]
-
-    return {
-        "X": X,
-        "y": [index % 2 for index in range(num_samples)],
-        "dataset_name": dataset_name,
-        "task_type": "classification",
-        "data_format": "image",
-        "image_channels": channels,
-        "image_height": height,
-        "image_width": width,
-    }
-
-
-def patch_torchvision_dataset(monkeypatch, dataset_name, data_shape):
-    mock_data = _make_mock_image_data(dataset_name, data_shape)
-    func_name = f"get_{dataset_name}"
-    monkeypatch.setattr(dataset_node, func_name, lambda max_samples=2000: mock_data)
+from app.pipeline.nodes.model_node import run as run_model
+from app.pipeline.nodes.preprocess_node import run as run_preprocess
+from app.pipeline.nodes.train_test_split_node import run as run_split
 
 
 def test_digits_dataset_returns_images_with_metadata():
@@ -56,24 +25,20 @@ def test_digits_dataset_returns_images_with_metadata():
 
 
 @pytest.mark.parametrize(
-    "dataset_name,data_shape,channels,height,width",
+    "dataset_name,channels,height,width",
     [
-        ("mnist", (8, 28, 28), 1, 28, 28),
-        ("fashion_mnist", (8, 28, 28), 1, 28, 28),
-        ("cifar10", (8, 32, 32, 3), 3, 32, 32),
+        ("mnist", 1, 28, 28),
+        ("fashion_mnist", 1, 28, 28),
+        ("cifar10", 3, 32, 32),
     ]
 )
-def test_torchvision_image_datasets_return_metadata(
-    monkeypatch,
+def test_torchvision_image_datasets_are_lazy(
     dataset_name,
-    data_shape,
     channels,
     height,
     width
 ):
-    patch_torchvision_dataset(monkeypatch, dataset_name, data_shape)
-
-    result = run_dataset({}, {"dataset": dataset_name, "data_dir": "/tmp/dlp-data"})
+    result = run_dataset({}, {"dataset": dataset_name, "max_samples": 512})
 
     assert result["dataset_name"] == dataset_name
     assert result["task_type"] == "classification"
@@ -81,7 +46,38 @@ def test_torchvision_image_datasets_return_metadata(
     assert result["image_channels"] == channels
     assert result["image_height"] == height
     assert result["image_width"] == width
-    assert len(result["X"]) == data_shape[0]
+    assert result["max_samples"] == 512
+    assert result["lazy_image"] is True
+    # The pixel arrays are loaded on Modal at train time, never here.
+    assert "X" not in result
+    assert "y" not in result
+
+
+def test_lazy_image_descriptor_survives_split_and_preprocess():
+    descriptor = run_dataset({}, {"dataset": "cifar10", "max_samples": 500})
+
+    split = run_split(descriptor, {"test_size": 0.3, "random_state": 7})
+
+    assert split["lazy_image"] is True
+    assert split["max_samples"] == 500
+    assert split["split_test_size"] == 0.3
+    assert split["split_random_state"] == 7
+    assert "X_train" not in split
+
+    preprocessed = run_preprocess(split, {})
+
+    assert preprocessed["lazy_image"] is True
+    assert preprocessed["max_samples"] == 500
+    assert "X_train" not in preprocessed
+
+
+def test_classical_model_rejects_lazy_image_dataset():
+    descriptor = run_dataset({}, {"dataset": "cifar10"})
+
+    with pytest.raises(ValueError) as exc_info:
+        run_model(descriptor, {"algorithm": "logistic_regression"})
+
+    assert "Neural Network" in str(exc_info.value)
 
 
 def test_cnn_digits_pipeline_execution():
@@ -145,15 +141,14 @@ def test_cnn_digits_pipeline_execution():
 
 
 @pytest.mark.parametrize(
-    "dataset_name,data_shape",
+    "dataset_name",
     [
-        ("mnist", (12, 28, 28)),
-        ("fashion_mnist", (12, 28, 28)),
-        ("cifar10", (12, 32, 32, 3)),
+        "mnist",
+        "fashion_mnist",
+        "cifar10",
     ]
 )
-def test_torchvision_cnn_pipeline_execution(monkeypatch, dataset_name, data_shape):
-    patch_torchvision_dataset(monkeypatch, dataset_name, data_shape)
+def test_torchvision_cnn_pipeline_execution(dataset_name):
     pipeline = {
         "nodes": [
             {
@@ -205,6 +200,57 @@ def test_torchvision_cnn_pipeline_execution(monkeypatch, dataset_name, data_shap
     assert result["output"]["model_name"] == "cnn"
     assert result["output"]["training_summary"]["optimizer"] == "sgd"
     assert "accuracy" in result["output"]["metrics"]
+
+
+def test_cnn_pipeline_forwards_dataset_config_to_modal(monkeypatch):
+    captured = {}
+
+    def fake_split_and_train_cnn(dataset_name, max_samples, split_config, train_config):
+        captured["dataset_name"] = dataset_name
+        captured["max_samples"] = max_samples
+        captured["split_config"] = split_config
+        return {
+            "model_name": "cnn",
+            "metrics": {"accuracy": 1.0, "loss": 0.0},
+            "loss_history": [0.0],
+            "predictions": [],
+            "y_test": [],
+        }
+
+    monkeypatch.setattr(
+        neural_network_node, "run_split_and_train_cnn", fake_split_and_train_cnn
+    )
+
+    pipeline = {
+        "nodes": [
+            {
+                "id": "dataset",
+                "type": "dataset",
+                "config": {"dataset": "cifar10", "max_samples": 750},
+            },
+            {
+                "id": "split",
+                "type": "train_test_split",
+                "config": {"test_size": 0.25, "random_state": 7},
+            },
+            {
+                "id": "nn",
+                "type": "neural_network",
+                "config": {"architecture": "cnn", "epochs": 1},
+            },
+        ],
+        "edges": [
+            {"source": "dataset", "target": "split"},
+            {"source": "split", "target": "nn"},
+        ],
+    }
+
+    result = run_pipeline(pipeline)
+
+    assert result["status"] == "success"
+    assert captured["dataset_name"] == "cifar10"
+    assert captured["max_samples"] == 750
+    assert captured["split_config"] == {"test_size": 0.25, "random_state": 7}
 
 
 def test_cnn_rejects_non_image_dataset():

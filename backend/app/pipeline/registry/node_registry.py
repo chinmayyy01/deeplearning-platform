@@ -1,4 +1,16 @@
-from app.pipeline.nodes import dataset_node, model_node, preprocess_node, train_test_split_node, neural_network_node
+from app.pipeline.nodes import (
+    dataset_node,
+    model_node,
+    neural_network_node,
+    preprocess_node,
+    train_test_split_node,
+)
+from app.pipeline.datasets.registry import (
+    DEFAULT_DATASET,
+    dataset_options,
+    remote_dataset_names,
+)
+from app.pipeline.models.registry import model_config_schema
 
 NODE_REGISTRY = {
     "dataset": {
@@ -11,22 +23,8 @@ NODE_REGISTRY = {
             "config_schema": {
                 "dataset": {
                     "type": "string",
-                    "options": [
-                        "iris",
-                        "wine",
-                        "breast_cancer",
-                        "california_housing",
-                        "diabetes",
-                        "digits",
-                        "mnist",
-                        "fashion_mnist",
-                        "cifar10"
-                    ],
-                    "default": "iris"
-                },
-                "data_dir": {
-                    "type": "string",
-                    "default": "data"
+                    "options": dataset_options(),
+                    "default": DEFAULT_DATASET,
                 },
                 "max_samples": {
                     "type": "integer",
@@ -35,13 +33,13 @@ NODE_REGISTRY = {
                     "min": 100,
                     "max": 60000,
                     "visible_if": {
-                        "dataset": ["mnist", "fashion_mnist", "cifar10"]
-                    }
-                }
-            }
-        }
+                        "dataset": remote_dataset_names(),
+                    },
+                },
+            },
+        },
     },
-    
+
     "train_test_split": {
         "executor": train_test_split_node.run,
         "metadata": {
@@ -52,16 +50,18 @@ NODE_REGISTRY = {
             "config_schema": {
                 "test_size": {
                     "type": "float",
-                    "default": 0.2
+                    "default": 0.2,
+                    "min": 0.05,
+                    "max": 0.95,
                 },
                 "random_state": {
                     "type": "integer",
-                    "default": 42
-                }
-            }
-        }
+                    "default": 42,
+                },
+            },
+        },
     },
-    
+
     "preprocess": {
         "executor": preprocess_node.run,
         "metadata": {
@@ -73,90 +73,21 @@ NODE_REGISTRY = {
                 "scaler_type": {
                     "type": "string",
                     "options": ["standard", "minmax", "robust"],
-                    "default": "standard"
+                    "default": "standard",
                 }
-            }
-        }
+            },
+        },
     },
-    
+
     "model": {
         "executor": model_node.run,
         "metadata": {
             "display_name": "Model Node",
             "description": "Trains machine learning model",
-            "inputs": ["X_train","X_test", "y_train", "y_test"],
+            "inputs": ["X_train", "X_test", "y_train", "y_test"],
             "outputs": ["predictions", "metrics"],
-            "config_schema": {
-                "algorithm": {
-                    "type": "string",
-                    "label": "Algorithm",
-                    "options": ["linear_regression", "logistic_regression", "decision_tree", "random_forest"],
-                    "default": "logistic_regression"
-                },
-
-                "fit_intercept": {
-                    "type": "boolean",
-                    "label": "Fit Intercept",
-                    "default": True,
-                    "visible_if": {
-                        "algorithm": ["linear_regression", "logistic_regression"]
-                    }
-                },
-
-                "max_depth": {
-                    "type": "integer",
-                    "label": "Max Depth",
-                    "default": 5,
-                    "min": 1,
-                    "max": 100,
-                    "visible_if": {
-                        "algorithm": ["decision_tree", "random_forest"]
-                    }
-                },
-
-                "n_estimators": {
-                    "type": "integer",
-                    "label": "Number of Estimators",
-                    "default": 100,
-                    "min": 1,
-                    "max": 1000,
-                    "visible_if": {
-                        "algorithm": ["random_forest"]
-                    }
-                },
-
-                "criterion": {
-                    "type": "string",
-                    "label": "Criterion",
-                    "options": ["gini", "entropy"],
-                    "default": "gini",
-                    "visible_if": {
-                        "algorithm": ["decision_tree", "random_forest"]
-                    }
-                },
-
-                "C": {
-                    "type": "float",
-                    "label": "Regularization Strength",
-                    "default": 1.0,
-                    "min": 0.0001,
-                    "max": 1000,
-                    "visible_if": {
-                        "algorithm": ["logistic_regression"]
-                    }
-                },
-
-                "solver": {
-                    "type": "string",
-                    "label": "Solver",
-                    "options": ["lbfgs", "liblinear"],
-                    "default": "lbfgs",
-                    "visible_if": {
-                        "algorithm": ["logistic_regression"]
-                    }
-                }
-            }
-        }
+            "config_schema": model_config_schema(),
+        },
     },
 
     "neural_network": {
@@ -170,13 +101,13 @@ NODE_REGISTRY = {
                 "architecture": {
                     "type": "string",
                     "options": ["mlp", "cnn"],
-                    "default": "mlp"
+                    "default": "mlp",
                 },
                 "hidden_size": {
                     "type": "integer",
                     "default": 128,
                     "min": 1,
-                    "max": 4096
+                    "max": 4096,
                 },
                 "filters": {
                     "type": "integer",
@@ -185,8 +116,8 @@ NODE_REGISTRY = {
                     "min": 1,
                     "max": 512,
                     "visible_if": {
-                        "architecture": ["cnn"]
-                    }
+                        "architecture": ["cnn"],
+                    },
                 },
                 "kernel_size": {
                     "type": "integer",
@@ -195,8 +126,8 @@ NODE_REGISTRY = {
                     "min": 1,
                     "max": 11,
                     "visible_if": {
-                        "architecture": ["cnn"]
-                    }
+                        "architecture": ["cnn"],
+                    },
                 },
                 "dropout": {
                     "type": "float",
@@ -205,35 +136,35 @@ NODE_REGISTRY = {
                     "min": 0,
                     "max": 1,
                     "visible_if": {
-                        "architecture": ["cnn"]
-                    }
+                        "architecture": ["cnn"],
+                    },
                 },
                 "epochs": {
                     "type": "integer",
                     "default": 10,
                     "min": 1,
-                    "max": 1000
+                    "max": 1000,
                 },
                 "learning_rate": {
                     "type": "float",
                     "default": 0.001,
                     "min": 0.000001,
-                    "max": 1
+                    "max": 1,
                 },
                 "batch_size": {
                     "type": "integer",
                     "label": "Batch Size",
                     "default": 32,
                     "min": 1,
-                    "max": 1024
+                    "max": 1024,
                 },
                 "optimizer": {
                     "type": "string",
                     "label": "Optimizer",
                     "options": ["adam", "sgd"],
-                    "default": "adam"
-                }
-            }
-        }
-    }
+                    "default": "adam",
+                },
+            },
+        },
+    },
 }

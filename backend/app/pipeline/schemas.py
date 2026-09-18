@@ -1,15 +1,17 @@
 from pydantic import BaseModel, Field
-from typing import List
+
 
 class Node(BaseModel):
-    id: str
-    type: str
+    id: str = Field(min_length=1)
+    type: str = Field(min_length=1)
     config: dict = Field(default_factory=dict)
-    
+
+
 class Edge(BaseModel):
-    source: str
-    target: str
-    
+    source: str = Field(min_length=1)
+    target: str = Field(min_length=1)
+
+
 class Pipeline(BaseModel):
-    nodes: List[Node]
-    edges: List[Edge]
+    nodes: list[Node] = Field(min_length=1)
+    edges: list[Edge]
