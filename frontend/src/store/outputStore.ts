@@ -17,6 +17,7 @@ export type PipelineOutput = {
   predictions?: unknown[];
   predictions_preview?: unknown[];
   y_test_preview?: number[];
+  y_test?: number[];
   metrics?: MetricsMap;
   config_used?: Record<string, unknown>;
   training_summary?: Record<string, unknown>;
@@ -72,7 +73,6 @@ interface OutputStore {
     nodeType?: string | null;
   }) => void;
   setActiveTab: (tab: OutputTab) => void;
-  saveRun: (run: SavedRun) => void;
   toggleCompareRun: (id: string) => void;
 }
 
@@ -138,12 +138,6 @@ export const useOutputStore = create<OutputStore>((set) => ({
       activeTab: "results",
     })),
   setActiveTab: (tab) => set(() => ({ activeTab: tab })),
-  saveRun: (run) =>
-    set((state) => ({
-      savedRuns: state.savedRuns.some((r) => r.id === run.id)
-        ? state.savedRuns
-        : [run, ...state.savedRuns],
-    })),
   toggleCompareRun: (id) =>
     set((state) => {
       const alreadySelected = state.selectedCompareIds.includes(id);

@@ -1,4 +1,5 @@
 from app.pipeline.utils import build_graph, topological_sort
+from app.pipeline.error_handler import PipelineError
 import pytest
 
 
@@ -37,7 +38,7 @@ def test_cycle_detection():
         ]
     }
 
-    with pytest.raises(ValueError):
+    with pytest.raises(PipelineError):
         topological_sort(pipeline)
 
 
@@ -47,5 +48,5 @@ def test_invalid_edge():
         "edges": [{"source": "A", "target": "X"}]
     }
 
-    with pytest.raises(ValueError):
+    with pytest.raises(PipelineError):
         build_graph(pipeline)

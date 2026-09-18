@@ -90,15 +90,15 @@ const tokenizedPython = (code: string) => {
       <div key={`line-${lineIndex}`} className="whitespace-pre">
         {parts.map((part, pi) =>
           part.type === "keyword" ? (
-            <span key={pi} className="text-[#a78bfa]">
+            <span key={pi} className="text-[#9aa2f0]">
               {part.value}
             </span>
           ) : part.type === "string" ? (
-            <span key={pi} className="text-[#86efac]">
+            <span key={pi} className="text-[#7ee08d]">
               {part.value}
             </span>
           ) : part.type === "comment" ? (
-            <span key={pi} className="text-white/40">
+            <span key={pi} className="text-ink-4">
               {part.value}
             </span>
           ) : (
@@ -124,7 +124,7 @@ export default function GeneratedCodePanel({
 
   if (!code) {
     return (
-      <div className="rounded-xl border border-white/5 bg-[#141419] px-5 py-6 text-white/50 text-[13px]">
+      <div className="rounded-lg border border-line bg-elevated px-5 py-6 text-ink-3 text-[12.5px]">
         Run a pipeline to generate exportable Python code.
       </div>
     );
@@ -151,31 +151,31 @@ export default function GeneratedCodePanel({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] text-white/50">Generated pipeline code</p>
+        <p className="text-[12px] text-ink-2">Generated pipeline code</p>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setExpanded((v) => !v)}
-            className="h-8 px-3 rounded-lg border border-white/10 bg-white/5 text-[12px] text-white/80 hover:text-white"
+            className="h-8 px-3 rounded-md border border-line bg-elevated text-[12px] text-ink-2 hover:text-ink hover:bg-hover transition-colors cursor-pointer"
           >
             {expanded ? "Collapse" : "Expand"}
           </button>
           <button
             onClick={handleDownload}
-            className="h-8 px-3 rounded-lg border border-white/10 bg-white/5 text-[12px] text-white/80 hover:text-white"
+            className="h-8 px-3 rounded-md border border-line bg-elevated text-[12px] text-ink-2 hover:text-ink hover:bg-hover transition-colors cursor-pointer"
           >
             Download
           </button>
           <button
             onClick={handleCopy}
-            className="h-8 px-3 rounded-lg border border-white/10 bg-white/5 text-[12px] text-white/80 hover:text-white"
+            className="h-8 px-3 rounded-md border border-line bg-elevated text-[12px] text-ink-2 hover:text-ink hover:bg-hover transition-colors cursor-pointer"
           >
             Copy
           </button>
         </div>
       </div>
-      <div className="rounded-xl border border-white/5 bg-[#0e0e12]">
+      <div className="rounded-lg border border-line bg-inset">
         <div
-          className={`${maxHeight} overflow-auto px-4 py-3 font-mono text-[12px] leading-relaxed text-white/90`}
+          className={`${maxHeight} overflow-auto px-4 py-3 font-mono text-[12px] leading-relaxed text-ink`}
         >
           {tokenizedPython(code)}
         </div>

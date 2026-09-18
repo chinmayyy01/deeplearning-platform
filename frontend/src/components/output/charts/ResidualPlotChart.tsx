@@ -1,5 +1,7 @@
 "use client";
 
+import { maxOf, minOf } from "@/lib/numeric";
+
 type Point = { actual: number; predicted: number };
 
 type ResidualPlotChartProps = {
@@ -16,11 +18,11 @@ export default function ResidualPlotChart({ points }: ResidualPlotChartProps) {
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
 
-  const predMin = Math.min(...points.map((p) => p.predicted));
-  const predMax = Math.max(...points.map((p) => p.predicted));
+  const predMin = minOf(points.map((p) => p.predicted));
+  const predMax = maxOf(points.map((p) => p.predicted));
   const predRange = predMax - predMin || 1;
-  const resMin = Math.min(...residuals);
-  const resMax = Math.max(...residuals);
+  const resMin = minOf(residuals);
+  const resMax = maxOf(residuals);
   const resRange = resMax - resMin || 1;
 
   const scaleX = (v: number) =>
@@ -61,7 +63,7 @@ export default function ResidualPlotChart({ points }: ResidualPlotChartProps) {
           cx={scaleX(p.predicted)}
           cy={scaleY(p.actual - p.predicted)}
           r={3.5}
-          fill="#f59e0b"
+          fill="#d3a04d"
           opacity={0.85}
         />
       ))}
@@ -69,7 +71,7 @@ export default function ResidualPlotChart({ points }: ResidualPlotChartProps) {
         x={width / 2}
         y={height - 8}
         textAnchor="middle"
-        fill="rgba(255,255,255,0.4)"
+        fill="var(--color-ink-3)"
         fontSize={10}
       >
         Predicted
@@ -78,7 +80,7 @@ export default function ResidualPlotChart({ points }: ResidualPlotChartProps) {
         x={14}
         y={height / 2}
         textAnchor="middle"
-        fill="rgba(255,255,255,0.4)"
+        fill="var(--color-ink-3)"
         fontSize={10}
         transform={`rotate(-90 14 ${height / 2})`}
       >

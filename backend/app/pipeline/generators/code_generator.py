@@ -1,4 +1,5 @@
 from app.pipeline.generators.code_registry import CODE_GENERATOR_REGISTRY
+from app.pipeline.utils import topological_sort
 
 def generate_pipeline_code(pipeline):
     all_imports = set()
@@ -6,7 +7,9 @@ def generate_pipeline_code(pipeline):
         "# Generated ML Pipeline"
     ]
 
-    for node in pipeline["nodes"]:
+    node_map = {node["id"]: node for node in pipeline["nodes"]}
+    for node_id in topological_sort(pipeline):
+        node = node_map[node_id]
         node_type = node["type"]
         config = node.get("config", {})
 

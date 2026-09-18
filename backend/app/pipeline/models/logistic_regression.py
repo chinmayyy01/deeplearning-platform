@@ -24,6 +24,7 @@ def train(input_data, config):
         "predictions": predictions.tolist(),
         "predictions_preview": predictions[:10].tolist(),
         "y_test_preview": list(y_test[:10]),
+        "y_test": list(y_test),
         "metrics": {
             "accuracy": float(accuracy)
         },

@@ -1,6 +1,6 @@
 "use client";
 import type { Node } from "@xyflow/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { usePipelineStore } from "../store/pipelineStore";
 import {
   areConfigsEqual,
@@ -11,6 +11,7 @@ import {
 } from "@/lib/configSchema";
 import { mergeSchemaExtensions } from "@/lib/schemaExtensions";
 import { buildDatasetGroups, formatDatasetLabel } from "@/lib/datasetGroups";
+import { getNodePresentation } from "@/lib/nodePresentation";
 
 interface ConfigPanelProps {
   nodeMetadata: Record<string, NodeMetadataEntry>;
@@ -38,19 +39,42 @@ const shouldRenderField = (
   });
 };
 
+const inputClassName =
+  "w-full bg-inset border border-line rounded-md px-2.5 py-2 text-[12.5px] text-ink outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/25 transition-colors placeholder:text-ink-4";
+
+const Toggle = ({
+  value,
+  onChange,
+}: {
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) => (
+  <button
+    type="button"
+    onClick={() => onChange(!value)}
+    className={`w-9 h-5 rounded-full relative transition-colors shrink-0 cursor-pointer ${
+      value ? "bg-accent" : "bg-line"
+    }`}
+  >
+    <span
+      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${
+        value ? "left-[18px]" : "left-0.5"
+      }`}
+    />
+  </button>
+);
+
 export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
   const { nodes, selectedNodeId, updateNodeConfig } = usePipelineStore();
   const selectedNode = nodes.find((node: Node) => node.id === selectedNodeId);
-  const rawSchema = selectedNode?.type
-    ? nodeMetadata[selectedNode.type]?.config_schema
+  const selectedType = selectedNode?.type;
+  const rawSchema = selectedType
+    ? nodeMetadata[selectedType]?.config_schema
     : undefined;
-  const configSchema = useMemo(() => {
-    if (!selectedNode?.type || !rawSchema) return undefined;
-    return mergeSchemaExtensions(
-      selectedNode.type,
-      rawSchema as ConfigSchemaMap,
-    );
-  }, [selectedNode?.type, rawSchema]);
+  const configSchema =
+    selectedType && rawSchema
+      ? mergeSchemaExtensions(selectedType, rawSchema as ConfigSchemaMap)
+      : undefined;
   const nodeConfig =
     ((selectedNode?.data as { config?: Record<string, unknown> } | undefined)
       ?.config as Record<string, unknown>) ?? {};
@@ -66,13 +90,21 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
       )
     : [];
 
+  const [showRaw, setShowRaw] = useState(false);
+
   useEffect(() => {
     if (!selectedNode || !configSchema) return;
     const nextConfig = normalizeConfig(configSchema, nodeConfig);
     if (!areConfigsEqual(nextConfig, nodeConfig)) {
       updateNodeConfig(selectedNode.id, nextConfig, { replace: true });
     }
-  }, [selectedNodeId, selectedNode?.type, configSchema, nodeConfig, updateNodeConfig]);
+  }, [
+    selectedNodeId,
+    selectedNode?.type,
+    configSchema,
+    nodeConfig,
+    updateNodeConfig,
+  ]);
 
   const handleConfigChange = (key: string, value: unknown) => {
     if (!selectedNode) return;
@@ -87,10 +119,7 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
     updateNodeConfig(selectedNode.id, nextConfig, { replace: true });
   };
 
-  const inputClassName =
-    "w-full bg-[#14141a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-violet-500/70 focus:ring-1 focus:ring-violet-500/30";
-  const optionClassName = "bg-[#1a1a1f] text-white";
-  const helperClassName = "text-[11px] text-white/40";
+  const optionClassName = "bg-elevated text-ink";
 
   const renderSelectField = (
     key: string,
@@ -100,7 +129,9 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
   ) => {
     const options = field.options ?? [];
     const isDatasetField =
-      selectedNode?.type === "dataset" && key === "dataset" && options.length > 0;
+      selectedNode?.type === "dataset" &&
+      key === "dataset" &&
+      options.length > 0;
     const groups = isDatasetField ? buildDatasetGroups(options) : null;
 
     if (groups && groups.length > 0) {
@@ -154,17 +185,16 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
     const label = field.label ?? key;
     const minValue = typeof field.min === "number" ? field.min : undefined;
     const maxValue = typeof field.max === "number" ? field.max : undefined;
-    const showRange = typeof minValue === "number" && typeof maxValue === "number";
+    const showRange =
+      typeof minValue === "number" && typeof maxValue === "number";
 
     if (fieldType === "boolean") {
       return (
-        <label className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#14141a] px-3 py-2">
-          <span className="text-sm text-white">{label}</span>
-          <input
-            type="checkbox"
-            checked={Boolean(resolvedValue ?? false)}
-            onChange={(e) => handleConfigChange(key, e.target.checked)}
-            className="h-4 w-4 rounded border border-white/20 bg-[#0f0f13] accent-violet-500"
+        <label className="flex items-center justify-between gap-3 rounded-md border border-line bg-inset px-2.5 py-2 cursor-pointer">
+          <span className="text-[12.5px] text-ink">{label}</span>
+          <Toggle
+            value={Boolean(resolvedValue ?? false)}
+            onChange={(v) => handleConfigChange(key, v)}
           />
         </label>
       );
@@ -188,8 +218,10 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
                 max={maxValue}
                 step={step}
                 value={numericValue ?? minValue ?? 0}
-                onChange={(e) => handleConfigChange(key, Number(e.target.value))}
-                className="flex-1 accent-violet-500 cursor-pointer"
+                onChange={(e) =>
+                  handleConfigChange(key, Number(e.target.value))
+                }
+                className="flex-1 accent-accent cursor-pointer"
               />
               <input
                 type="number"
@@ -212,7 +244,7 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
                 placeholder={
                   field.default !== undefined ? String(field.default) : ""
                 }
-                className="w-28 bg-[#14141a] border border-white/10 rounded-lg px-2 py-2 text-sm text-white outline-none focus:border-violet-500/70"
+                className="w-20 bg-inset border border-line rounded-md px-2 py-1.5 text-[12.5px] text-ink outline-none focus:border-accent/70 transition-colors"
               />
             </div>
           ) : (
@@ -241,7 +273,7 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
             />
           )}
           {showRange && (
-            <div className={helperClassName}>
+            <div className="text-[11px] text-ink-3">
               Range: {minValue} – {maxValue}
             </div>
           )}
@@ -260,60 +292,126 @@ export default function ConfigPanel({ nodeMetadata }: ConfigPanelProps) {
     );
   };
 
+  if (!selectedNode) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-3 px-6 text-center">
+        <div className="w-10 h-10 rounded-lg bg-elevated border border-line flex items-center justify-center">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-ink-3)"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+          </svg>
+        </div>
+        <p className="text-[12.5px] text-ink-2">No node selected</p>
+        <p className="text-[11.5px] text-ink-3 max-w-[200px]">
+          Select a node on the canvas to edit its configuration.
+        </p>
+      </div>
+    );
+  }
+
+  const presentation = getNodePresentation(selectedNode.type ?? "generic");
   const displayName =
-    selectedNode?.type && nodeMetadata[selectedNode.type]?.display_name
+    selectedNode.type && nodeMetadata[selectedNode.type]?.display_name
       ? nodeMetadata[selectedNode.type].display_name
-      : selectedNode?.type?.replace(/_/g, " ");
+      : selectedNode.type?.replace(/_/g, " ");
 
   return (
-    <div className="w-full h-full p-4 text-white overflow-y-auto">
-      {!selectedNode ? (
-        <p className="text-white/40 text-sm">Select a node to configure</p>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <p className="text-xs text-white/40 mb-1">Node Type</p>
-            <p className="text-sm font-semibold capitalize">{displayName}</p>
-            {selectedNode.type && nodeMetadata[selectedNode.type]?.description && (
-              <p className="text-[11px] text-white/40 mt-1">
-                {nodeMetadata[selectedNode.type].description}
-              </p>
-            )}
+    <div className="text-ink">
+      {/* Node header */}
+      <div className="px-4 pt-4 pb-3 border-b border-line-soft">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[13px] font-semibold"
+            style={{
+              background: `${presentation.color}1f`,
+              color: presentation.color,
+            }}
+          >
+            {presentation.icon === "neural"
+              ? "NN"
+              : presentation.label.charAt(0)}
           </div>
-          <div>
-            <p className="text-xs text-white/40 mb-2">Current Config</p>
-            <pre className="bg-[#1a1a1f] p-3 rounded-lg text-xs overflow-x-auto mb-4">
-              {JSON.stringify(resolvedConfig, null, 2)}
-            </pre>
-          </div>
-          <div className="mt-6 space-y-4">
-            <p className="text-xs text-white/40">Configuration Fields</p>
-            {configSchema && visibleConfigEntries.length === 0 && (
-              <p className="text-[12px] text-white/40">
-                No configurable fields for this node.
-              </p>
-            )}
-            {configSchema &&
-              visibleConfigEntries.map(([key, field]) => {
-                const typedField = field as ConfigFieldSchema;
-                const resolvedValue =
-                  resolvedConfig[key] ?? typedField.default;
-                const label = typedField.label ?? key;
-                return (
-                  <div
-                    key={key}
-                    className="flex flex-col gap-2 rounded-xl border border-white/5 bg-[#111117] p-3"
-                  >
-                    <label className="text-sm font-medium text-white/90">
-                      {label}
-                    </label>
-                    {renderField(key, typedField, resolvedValue)}
-                  </div>
-                );
-              })}
+          <div className="min-w-0">
+            <p className="text-[13.5px] font-semibold text-ink capitalize truncate">
+              {displayName}
+            </p>
+            <p className="text-[11px] text-ink-3 font-mono truncate">
+              {selectedNode.type}
+            </p>
           </div>
         </div>
-      )}
+        {selectedNode.type && nodeMetadata[selectedNode.type]?.description && (
+          <p className="text-[11.5px] text-ink-2 mt-2.5 leading-relaxed">
+            {nodeMetadata[selectedNode.type].description}
+          </p>
+        )}
+      </div>
+
+      {/* Fields */}
+      <div className="p-4 space-y-3">
+        {configSchema && visibleConfigEntries.length === 0 && (
+          <p className="text-[12px] text-ink-3">
+            This node has no configurable fields.
+          </p>
+        )}
+        {configSchema &&
+          visibleConfigEntries.map(([key, field]) => {
+            const typedField = field as ConfigFieldSchema;
+            const resolvedValue = resolvedConfig[key] ?? typedField.default;
+            const label = typedField.label ?? key;
+            const isBoolean = (typedField.type ?? "string") === "boolean";
+            return (
+              <div key={key} className="flex flex-col gap-1.5">
+                {!isBoolean && (
+                  <label className="text-[12px] font-medium text-ink-2">
+                    {label}
+                  </label>
+                )}
+                {renderField(key, typedField, resolvedValue)}
+              </div>
+            );
+          })}
+
+        {configSchema && visibleConfigEntries.length > 0 && (
+          <div className="pt-1">
+            <button
+              onClick={() => setShowRaw((v) => !v)}
+              className="flex items-center gap-1.5 text-[11px] text-ink-3 hover:text-ink-2 transition-colors cursor-pointer"
+            >
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                style={{
+                  transform: showRaw ? "rotate(90deg)" : "rotate(0deg)",
+                  transition: "transform 0.15s",
+                }}
+              >
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+              Raw configuration
+            </button>
+            {showRaw && (
+              <pre className="mt-2 bg-inset border border-line rounded-md p-3 text-[11px] leading-relaxed text-ink-2 font-mono overflow-x-auto">
+                {JSON.stringify(resolvedConfig, null, 2)}
+              </pre>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

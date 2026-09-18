@@ -1,5 +1,5 @@
 from app.pipeline.registry.node_registry import NODE_REGISTRY
-from app.pipeline.utils import build_graph, topological_sort
+from app.pipeline.utils import topological_sort
 from app.pipeline.error_handler import PipelineError
 
 
@@ -20,7 +20,6 @@ def validate_pipeline(pipeline):
                 node_id=node["id"],
             )
 
-    graph, _ = build_graph(pipeline)
     topological_sort(pipeline)
     parent_map = {node_id: [] for node_id in node_map}
 

@@ -52,7 +52,6 @@ export default function Canvas() {
     setSelectedNode,
     setSelectedEdge,
     deleteNode,
-    deleteEdge,
     onNodeDragStop,
   } = usePipelineStore();
 
@@ -165,7 +164,7 @@ export default function Canvas() {
         ...edge,
         animated: settings.animateEdges,
         style: {
-          stroke: "rgba(255,255,255,0.2)",
+          stroke: "rgba(255,255,255,0.14)",
           strokeWidth: settings.edgeWidth,
           ...(edge.style ?? {}),
         },
@@ -177,7 +176,7 @@ export default function Canvas() {
     () => ({
       animated: settings.animateEdges,
       style: {
-        stroke: "rgba(255,255,255,0.2)",
+        stroke: "rgba(255,255,255,0.14)",
         strokeWidth: settings.edgeWidth,
       },
     }),
@@ -187,7 +186,7 @@ export default function Canvas() {
   return (
     <div
       ref={canvasRef}
-      className="w-full h-full bg-[#0d0d0f]"
+      className="w-full h-full bg-canvas"
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
@@ -210,18 +209,18 @@ export default function Canvas() {
         connectionLineType={connLineMap[settings.connectionLineStyle]}
         defaultEdgeOptions={edgeOptions}
         defaultViewport={{ x: 0, y: 0, zoom: settings.defaultZoom }}
-        style={{ background: "#0d0d0f" }}
+        style={{ background: "var(--color-canvas)" }}
         proOptions={{ hideAttribution: true }}
       >
         <CanvasViewportSync zoom={settings.defaultZoom} />
         {bgVariant && (
-          <Background variant={bgVariant} gap={20} size={1.5} color="#2a2a35" />
+          <Background variant={bgVariant} gap={20} size={1.5} color="#22222a" />
         )}
         {settings.showControls && (
           <Controls
             style={{
-              background: "#1a1a1f",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--color-elevated)",
+              border: "1px solid var(--color-line)",
               borderRadius: 8,
               overflow: "hidden",
             }}
@@ -230,14 +229,14 @@ export default function Canvas() {
         {settings.minimap && (
           <MiniMap
             style={{
-              background: "#1a1a1f",
-              border: "1px solid rgba(255,255,255,0.1)",
+              background: "var(--color-panel)",
+              border: "1px solid var(--color-line)",
               borderRadius: 8,
               height: 100,
               width: 150,
             }}
-            nodeColor="#444"
-            maskColor="rgba(0,0,0,0.5)"
+            nodeColor="#3a3a44"
+            maskColor="rgba(0,0,0,0.55)"
           />
         )}
         <Panel position="bottom-center">

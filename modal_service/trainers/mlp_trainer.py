@@ -15,15 +15,21 @@ def train(input_data, config):
             X_train = X_train / scale_factor
             X_test = X_test / scale_factor
 
-    y_train = torch.tensor(input_data["y_train"], dtype=torch.long)
-    y_test = torch.tensor(input_data["y_test"], dtype=torch.long)
+    train_labels = [int(label) for label in input_data["y_train"]]
+    test_labels = [int(label) for label in input_data["y_test"]]
+    classes = sorted(set(train_labels) | set(test_labels))
+    class_to_index = {label: index for index, label in enumerate(classes)}
+
+    y_train = torch.tensor(
+        [class_to_index[label] for label in train_labels], dtype=torch.long
+    )
 
     if X_train.ndim > 2:
         X_train = torch.flatten(X_train, start_dim=1)
         X_test = torch.flatten(X_test, start_dim=1)
 
     input_size = X_train.shape[1]
-    output_size = len(set(input_data["y_train"]))
+    output_size = len(classes)
     hidden_size = config.get("hidden_size", 128)
     epochs = config.get("epochs", 10)
     learning_rate = config.get("learning_rate", 0.001)
@@ -66,19 +72,23 @@ def train(input_data, config):
         )
 
     with torch.no_grad():
+        model.eval()
         predictions = model(X_test)
         predicted_classes = predictions.argmax(dim=1)
 
+    predicted_labels = [classes[index] for index in predicted_classes.tolist()]
+
     accuracy = accuracy_score(
-        y_test.numpy(),
-        predicted_classes.numpy()
+        test_labels,
+        predicted_labels
     )
 
     return {
         "model_name": "mlp",
-        "predictions": predicted_classes.tolist(),
-        "predictions_preview": predicted_classes[:10].tolist(),
-        "y_test_preview": y_test[:10].tolist(),
+        "predictions": predicted_labels,
+        "predictions_preview": predicted_labels[:10],
+        "y_test_preview": test_labels[:10],
+        "y_test": test_labels,
         "metrics": {
             "accuracy": float(accuracy),
             "loss": float(loss_history[-1])

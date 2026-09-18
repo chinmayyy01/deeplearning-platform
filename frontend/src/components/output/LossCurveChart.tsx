@@ -1,5 +1,7 @@
 "use client";
 
+import { maxOf, minOf } from "@/lib/numeric";
+
 type LossCurveChartProps = {
   lossHistory: number[];
 };
@@ -13,8 +15,8 @@ export default function LossCurveChart({ lossHistory }: LossCurveChartProps) {
   const chartW = width - padding.left - padding.right;
   const chartH = height - padding.top - padding.bottom;
 
-  const minLoss = Math.min(...lossHistory);
-  const maxLoss = Math.max(...lossHistory);
+  const minLoss = minOf(lossHistory);
+  const maxLoss = maxOf(lossHistory);
   const yRange = maxLoss - minLoss || 1;
 
   const points = lossHistory.map((loss, i) => {
@@ -79,7 +81,7 @@ export default function LossCurveChart({ lossHistory }: LossCurveChartProps) {
           x={width / 2}
           y={height - 6}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.4)"
+          fill="var(--color-ink-3)"
           fontSize={10}
         >
           Epoch
@@ -88,7 +90,7 @@ export default function LossCurveChart({ lossHistory }: LossCurveChartProps) {
           x={12}
           y={height / 2}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.4)"
+          fill="var(--color-ink-3)"
           fontSize={10}
           transform={`rotate(-90 12 ${height / 2})`}
         >
@@ -97,12 +99,13 @@ export default function LossCurveChart({ lossHistory }: LossCurveChartProps) {
         <path
           d={linePath}
           fill="none"
-          stroke="#a78bfa"
+          stroke="#7c86e8"
           strokeWidth={2}
           strokeLinejoin="round"
+          strokeLinecap="round"
         />
         {points.map((p) => (
-          <circle key={p.epoch} cx={p.x} cy={p.y} r={3} fill="#7c3aed" />
+          <circle key={p.epoch} cx={p.x} cy={p.y} r={3} fill="#5e6ad2" />
         ))}
       </svg>
     </div>

@@ -3,7 +3,8 @@ import { useOutputStore } from "@/store/outputStore";
 
 const fmtNum = (v: number | string | null | undefined) => {
   if (v == null) return "-";
-  if (typeof v === "number") return Number.isFinite(v) ? v.toFixed(3) : String(v);
+  if (typeof v === "number")
+    return Number.isFinite(v) ? v.toFixed(3) : String(v);
   return String(v);
 };
 
@@ -13,22 +14,36 @@ export default function RunsPanel() {
   if (!savedRuns.length) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 px-6 text-center">
-        <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round">
-            <polygon points="5 3 19 12 5 21 5 3"/>
+        <div className="w-10 h-10 rounded-lg bg-elevated border border-line flex items-center justify-center">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--color-ink-3)"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+          >
+            <polygon points="6 4 19 12 6 20 6 4" />
           </svg>
         </div>
-        <p className="text-[11px] text-white/25">No runs yet. Run a pipeline to see results here.</p>
+        <p className="text-[12.5px] text-ink-2">No runs yet</p>
+        <p className="text-[11.5px] text-ink-3 max-w-[190px]">
+          Run a pipeline to track its metrics and training curves here.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="px-3 py-2 border-b border-white/[0.05] shrink-0">
-        <p className="text-[10px] text-white/30">{savedRuns.length} run{savedRuns.length !== 1 ? "s" : ""} saved</p>
+      <div className="px-3 py-2 shrink-0">
+        <p className="text-[11px] text-ink-3">
+          {savedRuns.length} run{savedRuns.length !== 1 ? "s" : ""} · select to
+          compare
+        </p>
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-3 pb-3 flex flex-col gap-1.5">
         {savedRuns.map((run) => {
           const selected = selectedCompareIds.includes(run.id);
           const metrics = Object.entries(run.metrics).slice(0, 2);
@@ -36,36 +51,67 @@ export default function RunsPanel() {
             <button
               key={run.id}
               onClick={() => toggleCompareRun(run.id)}
-              className={`w-full text-left px-3 py-3 border-b border-white/[0.04] transition-colors ${selected ? "bg-violet-500/8" : "hover:bg-white/[0.02]"}`}
+              className={`w-full text-left rounded-lg border px-3 py-2.5 transition-colors cursor-pointer ${
+                selected
+                  ? "border-accent/60 bg-accent-soft"
+                  : "border-line bg-elevated hover:border-line-strong hover:bg-hover"
+              }`}
             >
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-medium text-white/70 truncate">{run.modelName}</span>
-                <span className={`text-[9px] px-1.5 py-0.5 rounded border ${selected ? "border-violet-500/40 text-violet-400 bg-violet-500/10" : "border-white/10 text-white/30"}`}>
-                  {selected ? "selected" : "select"}
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-[12.5px] font-medium text-ink truncate">
+                  {run.modelName}
+                </span>
+                <span
+                  className={`shrink-0 w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    selected
+                      ? "border-accent bg-accent"
+                      : "border-ink-4 bg-transparent"
+                  }`}
+                >
+                  {selected && (
+                    <svg
+                      width="8"
+                      height="8"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
                 </span>
               </div>
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-[10px] text-white/30">{run.taskType}</span>
-                <span className="text-[10px] text-white/20">·</span>
-                <span className="text-[10px] text-white/30">{run.executionTime.toFixed(2)}s</span>
+              <div className="flex items-center gap-2 text-[11px] text-ink-3">
+                <span className="capitalize">{run.taskType}</span>
+                <span className="text-ink-4">·</span>
+                <span>{run.executionTime.toFixed(2)}s</span>
                 {run.dataset && (
                   <>
-                    <span className="text-[10px] text-white/20">·</span>
-                    <span className="text-[10px] text-white/30 truncate">{run.dataset}</span>
+                    <span className="text-ink-4">·</span>
+                    <span className="truncate">{run.dataset}</span>
                   </>
                 )}
               </div>
               {metrics.length > 0 && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 mt-1.5">
                   {metrics.map(([k, v]) => (
-                    <div key={k} className="flex items-center gap-1">
-                      <span className="text-[9px] text-white/25 uppercase tracking-wider">{k}</span>
-                      <span className="text-[10px] font-medium text-white/50">{fmtNum(v)}</span>
+                    <div key={k} className="flex items-baseline gap-1">
+                      <span className="text-[10.5px] text-ink-4 uppercase tracking-wider">
+                        {k}
+                      </span>
+                      <span className="text-[11px] font-medium text-ink-2">
+                        {fmtNum(v)}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
-              <p className="text-[9px] text-white/20 mt-1.5">{new Date(run.timestamp).toLocaleString()}</p>
+              <p className="text-[10.5px] text-ink-4 mt-1.5">
+                {new Date(run.timestamp).toLocaleString()}
+              </p>
             </button>
           );
         })}

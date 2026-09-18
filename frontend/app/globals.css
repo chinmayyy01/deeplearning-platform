@@ -1,46 +1,114 @@
 @import "tailwindcss";
 
-html,
-body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+@theme {
+  /* Surfaces */
+  --color-canvas: #0a0a0c;
+  --color-app: #0e0e11;
+  --color-panel: #121216;
+  --color-elevated: #17171c;
+  --color-inset: #0c0c0f;
+  --color-hover: #1d1d23;
+
+  /* Lines */
+  --color-line: #24242b;
+  --color-line-soft: #1b1b21;
+  --color-line-strong: #33333c;
+
+  /* Text */
+  --color-ink: #ededf0;
+  --color-ink-2: #9c9ca7;
+  --color-ink-3: #6a6a75;
+  --color-ink-4: #47474f;
+
+  /* Accent */
+  --color-accent: #5e6ad2;
+  --color-accent-hover: #6e79dd;
+  --color-accent-soft: #20233a;
+
+  /* Status */
+  --color-success: #3fb950;
+  --color-success-soft: #122417;
+  --color-danger: #f0616d;
+  --color-danger-soft: #2a1417;
+  --color-warning: #d29922;
+  --color-warning-soft: #2a2110;
+
+  /* Node categories */
+  --color-node-data: #7c86e8;
+  --color-node-split: #4bb3a3;
+  --color-node-preprocess: #d3a04d;
+  --color-node-model: #52b06b;
+  --color-node-neural: #d170a6;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
+
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+
+  --shadow-panel: 0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-pop: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
-body {
-  background: #0f0f11;
-  color: white;
-  font-family: system-ui, sans-serif;
+@layer base {
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  ::selection {
+    background: rgba(94, 106, 210, 0.35);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #2c2c34 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #2c2c34;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #3a3a44;
+    background-clip: padding-box;
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #7c3aed #141419;
-}
-
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: #141419;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #a855f7 0%, #7c3aed 100%);
-  border: 2px solid #141419;
-  border-radius: 9999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #c084fc 0%, #8b5cf6 100%);
-}
-
-*::-webkit-scrollbar-corner {
-  background: #141419;
-}
-
+/* React Flow */
 .react-flow__node {
   padding: 0 !important;
   border: none !important;
@@ -50,13 +118,58 @@ body {
   font-size: unset !important;
 }
 
+.react-flow__node.selected {
+  box-shadow: none !important;
+}
+
+.react-flow__handle {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.25);
+}
+
+.react-flow__edge-path {
+  stroke-linecap: round;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--color-accent) !important;
+  stroke-width: 2px !important;
+}
+
+.react-flow__connection-path {
+  stroke: var(--color-accent) !important;
+  stroke-width: 2px !important;
+}
+
+.react-flow__controls {
+  box-shadow: var(--shadow-pop) !important;
+}
+
 .react-flow__controls-button {
-  background: #1a1a1f !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  fill: rgba(255, 255, 255, 0.6) !important;
+  background: var(--color-elevated) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--color-line) !important;
+  width: 28px !important;
+  height: 28px !important;
+  fill: var(--color-ink-2) !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
 }
 
 .react-flow__controls-button:hover {
-  background: rgba(124, 58, 237, 0.2) !important;
-  fill: white !important;
+  background: var(--color-hover) !important;
+  fill: var(--color-ink) !important;
+}
+
+.react-flow__minimap {
+  background: var(--color-panel) !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
 }

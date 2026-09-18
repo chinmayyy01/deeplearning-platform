@@ -1,5 +1,7 @@
 "use client";
 
+import { maxOf, minOf } from "@/lib/numeric";
+
 type PredictionDistributionChartProps = {
   values: number[];
 };
@@ -10,15 +12,15 @@ export default function PredictionDistributionChart({
   if (!values.length) return null;
 
   const bins = 8;
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  const min = minOf(values);
+  const max = maxOf(values);
   const range = max - min || 1;
   const counts = Array(bins).fill(0);
   values.forEach((v) => {
     const idx = Math.min(bins - 1, Math.floor(((v - min) / range) * bins));
     counts[idx] += 1;
   });
-  const maxCount = Math.max(...counts, 1);
+  const maxCount = Math.max(maxOf(counts), 1);
   const barWidth = 28;
   const gap = 6;
   const chartHeight = 100;
@@ -39,7 +41,7 @@ export default function PredictionDistributionChart({
             width={barWidth}
             height={barH}
             rx={3}
-            fill="#6366f1"
+            fill="#7c86e8"
             opacity={0.8}
           />
         );
@@ -48,7 +50,7 @@ export default function PredictionDistributionChart({
         x={width / 2}
         y={height - 6}
         textAnchor="middle"
-        fill="rgba(255,255,255,0.4)"
+        fill="var(--color-ink-3)"
         fontSize={10}
       >
         Prediction Value

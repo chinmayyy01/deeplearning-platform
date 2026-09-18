@@ -7,7 +7,7 @@ from app.pipeline.generators.code_generator import generate_pipeline_code
 from app.pipeline.tracker import create_execution_record, mark_execution_success, mark_execution_failed
 
 def run_pipeline(pipeline):
-    start_time = time.time()
+    start_time = time.perf_counter()
     validate_pipeline(pipeline)
     order = topological_sort(pipeline)
     node_map = {node["id"]: node for node in pipeline["nodes"]}
@@ -17,7 +17,7 @@ def run_pipeline(pipeline):
     for edge in pipeline["edges"]:
         parents[edge["target"]].append(edge["source"])
     for node_id in order:
-        node_start_time = time.time()
+        node_start_time = time.perf_counter()
         node = node_map[node_id]
         node_type = node["type"]
         input_data = {}
@@ -37,12 +37,14 @@ def run_pipeline(pipeline):
             execution_record = create_execution_record(node_id, node_type)
             execution_details[node_id] = mark_execution_failed(
                 execution_record,
-                round(time.time() - node_start_time, 4),
+                round(time.perf_counter() - node_start_time, 4),
                 e
             )
-            raise PipelineError("NODE_EXECUTION_ERROR", str(e), node_id=node_id)
+            raise PipelineError(
+                "NODE_EXECUTION_ERROR", str(e), node_id=node_id, node_type=node_type
+            ) from e
     final_node = order[-1]
-    execution_time = round(time.time() - start_time, 4)
+    execution_time = round(time.perf_counter() - start_time, 4)
     try:
         generated_code = generate_pipeline_code(pipeline)
     except Exception as e:

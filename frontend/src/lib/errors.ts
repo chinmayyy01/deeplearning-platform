@@ -166,13 +166,12 @@ export const parseErrorResponse = async (response: Response) => {
     }
   }
 
+  const isGenericServerError =
+    typeof body === "string" && body.trim() === "Internal Server Error";
+
   let message = extractErrorMessage(body ?? { message: response.statusText });
 
-  if (
-    message === "Internal Server Error" &&
-    response.status >= 500 &&
-    !body
-  ) {
+  if (response.status >= 500 && (body == null || isGenericServerError)) {
     message =
       "The backend returned an internal server error. Ensure Python dependencies are installed and the API server is running.";
   }

@@ -49,7 +49,7 @@ export default function TrainingSummaryCard({
 
   if (!entries.length) {
     return (
-      <div className="rounded-xl border border-white/5 bg-[#141419] px-4 py-3 text-[12px] text-white/40">
+      <div className="rounded-lg border border-line bg-elevated px-4 py-3.5 text-[12px] text-ink-3">
         Training configuration will appear after a successful run.
       </div>
     );
@@ -60,12 +60,10 @@ export default function TrainingSummaryCard({
       {entries.map(({ key, label, value }) => (
         <div
           key={key}
-          className="bg-[#15151b] border border-white/5 rounded-xl px-4 py-3 flex flex-col gap-1"
+          className="rounded-lg border border-line bg-elevated px-4 py-3 flex flex-col gap-1"
         >
-          <span className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-semibold">
-            {label}
-          </span>
-          <span className="text-[16px] font-semibold text-white capitalize">
+          <span className="text-[11px] text-ink-3 font-medium">{label}</span>
+          <span className="text-[15px] font-semibold text-ink capitalize truncate">
             {formatValue(value)}
           </span>
         </div>

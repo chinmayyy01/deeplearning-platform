@@ -17,6 +17,40 @@ def _split(X, y, test_size=0.2, random_state=42):
     return X[:split_idx], X[split_idx:], y[:split_idx], y[split_idx:]
 
 
+def _fake_train(architecture, input_data, config):
+    """Lightweight stand-in for the Modal trainers.
+
+    Mirrors the output contract (metrics, loss_history, predictions, ...)
+    without importing torch, so backend tests stay dependency-free.
+    """
+    epochs = int(config.get("epochs", 10))
+    y_test = list(input_data.get("y_test", []))
+    num_classes = len(set(input_data.get("y_train", []))) or 1
+    predictions = [index % num_classes for index in range(len(y_test))]
+    loss_history = [round(1.0 / (index + 1), 4) for index in range(epochs)]
+    final_loss = loss_history[-1] if loss_history else 0.0
+
+    result = {
+        "model_name": architecture,
+        "predictions": predictions,
+        "predictions_preview": predictions[:10],
+        "y_test_preview": y_test[:10],
+        "y_test": y_test,
+        "metrics": {
+            "accuracy": 1.0 if y_test else 0.0,
+            "loss": final_loss,
+        },
+        "loss_history": loss_history,
+        "config_used": config,
+        "run_summary": {"model": architecture, "task_type": "classification"},
+        "training_summary": {**config, "epochs": epochs},
+    }
+    if architecture == "cnn":
+        result["best_loss"] = min(loss_history) if loss_history else 0.0
+        result["final_loss"] = final_loss
+    return result
+
+
 @pytest.fixture(autouse=True)
 def mock_modal_service(monkeypatch):
     def mock_get_mnist(max_samples=2000):
@@ -56,12 +90,10 @@ def mock_modal_service(monkeypatch):
         }
 
     def mock_run_mlp(input_data, config):
-        from modal_service.trainers.mlp_trainer import train
-        return train(input_data, config)
+        return _fake_train("mlp", input_data, config)
 
     def mock_run_cnn(input_data, config):
-        from modal_service.trainers.cnn_trainer import train
-        return train(input_data, config)
+        return _fake_train("cnn", input_data, config)
 
     def _build_split_input(dataset_name, max_samples, split_config):
         test_size = split_config.get("test_size", 0.2)
@@ -89,12 +121,18 @@ def mock_modal_service(monkeypatch):
         }
 
     def mock_run_split_and_train_mlp(dataset_name, max_samples, split_config, train_config):
-        from modal_service.trainers.mlp_trainer import train
-        return train(_build_split_input(dataset_name, max_samples, split_config), train_config)
+        return _fake_train(
+            "mlp",
+            _build_split_input(dataset_name, max_samples, split_config),
+            train_config,
+        )
 
     def mock_run_split_and_train_cnn(dataset_name, max_samples, split_config, train_config):
-        from modal_service.trainers.cnn_trainer import train
-        return train(_build_split_input(dataset_name, max_samples, split_config), train_config)
+        return _fake_train(
+            "cnn",
+            _build_split_input(dataset_name, max_samples, split_config),
+            train_config,
+        )
 
     monkeypatch.setattr(app.services.modal_service, "get_mnist", mock_get_mnist)
     monkeypatch.setattr(app.services.modal_service, "get_fashion_mnist", mock_get_fashion_mnist)

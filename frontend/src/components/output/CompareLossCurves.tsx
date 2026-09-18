@@ -1,7 +1,8 @@
 "use client";
 import type { SavedRun } from "@/store/outputStore";
+import { maxOf, minOf } from "@/lib/numeric";
 
-const COLORS = ["#a78bfa", "#34d399", "#f59e0b", "#60a5fa"];
+const COLORS = ["#7c86e8", "#4bb3a3", "#d3a04d", "#d170a6"];
 
 type CompareLossCurvesProps = {
   runs: SavedRun[];
@@ -11,10 +12,10 @@ export default function CompareLossCurves({ runs }: CompareLossCurvesProps) {
   const withHistory = runs.filter((r) => r.lossHistory && r.lossHistory.length > 0);
   if (withHistory.length < 2) return null;
 
-  const maxEpochs = Math.max(...withHistory.map((r) => r.lossHistory!.length));
+  const maxEpochs = maxOf(withHistory.map((r) => r.lossHistory!.length));
   const allLosses = withHistory.flatMap((r) => r.lossHistory!);
-  const minLoss = Math.min(...allLosses);
-  const maxLoss = Math.max(...allLosses);
+  const minLoss = minOf(allLosses);
+  const maxLoss = maxOf(allLosses);
   const yRange = maxLoss - minLoss || 1;
 
   const width = 640;
@@ -37,10 +38,10 @@ export default function CompareLossCurves({ runs }: CompareLossCurvesProps) {
 
   return (
     <div className="space-y-3">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-semibold">
+      <p className="text-[12.5px] font-semibold text-ink">
         Training Curve Comparison
       </p>
-      <div className="rounded-xl border border-white/5 bg-[#141419] px-4 py-3">
+      <div className="rounded-lg border border-line bg-elevated px-4 py-3">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full min-w-[280px]">
           <line
             x1={pad.left}
@@ -63,13 +64,14 @@ export default function CompareLossCurves({ runs }: CompareLossCurvesProps) {
               fill="none"
               stroke={p.color}
               strokeWidth={2}
+              strokeLinecap="round"
             />
           ))}
           <text
             x={width / 2}
             y={height - 6}
             textAnchor="middle"
-            fill="rgba(255,255,255,0.4)"
+            fill="var(--color-ink-3)"
             fontSize={10}
           >
             Epoch
@@ -77,7 +79,10 @@ export default function CompareLossCurves({ runs }: CompareLossCurvesProps) {
         </svg>
         <div className="flex flex-wrap gap-3 mt-2">
           {paths.map((p) => (
-            <div key={p.id} className="flex items-center gap-1.5 text-[11px] text-white/60">
+            <div
+              key={p.id}
+              className="flex items-center gap-1.5 text-[11px] text-ink-2"
+            >
               <span
                 className="w-3 h-0.5 rounded"
                 style={{ background: p.color }}

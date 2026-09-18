@@ -70,29 +70,34 @@ export const getMetricCards = (output?: PipelineOutput): MetricEntry[] => {
   return entries;
 };
 
+const LOWER_IS_BETTER_TOKENS = ["loss", "mse", "rmse", "mae", "error", "deviance"];
+
+export const isLowerBetterMetric = (key: string): boolean => {
+  const normalized = key.toLowerCase();
+  return LOWER_IS_BETTER_TOKENS.some((token) => normalized.includes(token));
+};
+
 const toNumberArray = (value: unknown): number[] | null => {
-  if (!Array.isArray(value)) return null;
-  return value.map((v) => Number(v)).filter((v) => Number.isFinite(v));
+  if (!Array.isArray(value) || value.length === 0) return null;
+  const numbers = value.map((v) => Number(v));
+  return numbers.every((v) => Number.isFinite(v)) ? numbers : null;
 };
 
 export const getActualLabels = (output?: PipelineOutput): number[] | null => {
   if (!output) return null;
   const record = output as Record<string, unknown>;
-  const preview = toNumberArray(
-    record.y_test_preview ?? record.actual_preview ?? record.y_true_preview,
-  );
-  if (preview?.length) return preview;
+  const full = toNumberArray(record.y_test ?? record.actual);
+  if (full) return full;
   return toNumberArray(
-    (output as Record<string, unknown>).y_test ??
-      (output as Record<string, unknown>).actual,
+    record.y_test_preview ?? record.actual_preview ?? record.y_true_preview,
   );
 };
 
 export const getPredictedLabels = (output?: PipelineOutput): number[] | null => {
   if (!output) return null;
-  const preview = toNumberArray(output.predictions_preview);
-  if (preview?.length) return preview;
-  return toNumberArray(output.predictions);
+  const full = toNumberArray(output.predictions);
+  if (full) return full;
+  return toNumberArray(output.predictions_preview);
 };
 
 export const buildPredictionRows = (output?: PipelineOutput): PredictionRow[] => {

@@ -39,11 +39,9 @@ export default function MlVisualizations({ output }: MlVisualizationsProps) {
           />
         ) : null}
         {featureCount != null && (
-          <div className="rounded-lg border border-white/5 bg-white/5 px-4 py-3">
-            <p className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-semibold">
-              Feature Count
-            </p>
-            <p className="text-[20px] font-semibold text-white mt-1">
+          <div className="rounded-lg border border-line bg-panel px-4 py-3">
+            <p className="text-[11px] text-ink-3 font-medium">Feature Count</p>
+            <p className="text-[19px] font-semibold text-ink mt-1 tabular-nums">
               {featureCount}
             </p>
           </div>
@@ -57,11 +55,11 @@ export default function MlVisualizations({ output }: MlVisualizationsProps) {
       return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
-            <p className="text-[11px] text-white/40 mb-2">Actual vs Predicted</p>
+            <p className="text-[11px] text-ink-3 mb-2">Actual vs Predicted</p>
             <ActualVsPredictedChart points={regressionPairs} />
           </div>
           <div>
-            <p className="text-[11px] text-white/40 mb-2">Residual Plot</p>
+            <p className="text-[11px] text-ink-3 mb-2">Residual Plot</p>
             <ResidualPlotChart points={regressionPairs} />
           </div>
         </div>
@@ -72,11 +70,11 @@ export default function MlVisualizations({ output }: MlVisualizationsProps) {
     }
     if (featureCount != null) {
       return (
-        <div className="rounded-lg border border-white/5 bg-white/5 px-4 py-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-white/40 font-semibold">
+        <div className="rounded-lg border border-line bg-panel px-4 py-3">
+          <p className="text-[11px] text-ink-3 font-medium">
             Feature Count Summary
           </p>
-          <p className="text-[20px] font-semibold text-white mt-1">
+          <p className="text-[19px] font-semibold text-ink mt-1 tabular-nums">
             {featureCount} features
           </p>
         </div>
@@ -89,7 +87,7 @@ export default function MlVisualizations({ output }: MlVisualizationsProps) {
   }
 
   return (
-    <div className="rounded-xl border border-white/5 bg-[#141419] px-4 py-3 text-[12px] text-white/40">
+    <div className="rounded-lg border border-line bg-panel px-4 py-3 text-[12px] text-ink-3">
       Visualizations will appear when model outputs are available.
     </div>
   );

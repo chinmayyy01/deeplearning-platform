@@ -1,5 +1,7 @@
 "use client";
 
+import { maxOf, minOf } from "@/lib/numeric";
+
 type Point = { actual: number; predicted: number };
 
 type ActualVsPredictedChartProps = {
@@ -18,8 +20,8 @@ export default function ActualVsPredictedChart({
   const chartH = height - pad.top - pad.bottom;
 
   const allValues = points.flatMap((p) => [p.actual, p.predicted]);
-  const min = Math.min(...allValues);
-  const max = Math.max(...allValues);
+  const min = minOf(allValues);
+  const max = maxOf(allValues);
   const range = max - min || 1;
 
   const scale = (v: number) => pad.top + chartH - ((v - min) / range) * chartH;
@@ -55,7 +57,7 @@ export default function ActualVsPredictedChart({
           cx={scaleX(p.actual)}
           cy={scale(p.predicted)}
           r={3.5}
-          fill="#34d399"
+          fill="#52b06b"
           opacity={0.85}
         />
       ))}
@@ -63,7 +65,7 @@ export default function ActualVsPredictedChart({
         x={width / 2}
         y={height - 8}
         textAnchor="middle"
-        fill="rgba(255,255,255,0.4)"
+        fill="var(--color-ink-3)"
         fontSize={10}
       >
         Actual
@@ -72,7 +74,7 @@ export default function ActualVsPredictedChart({
         x={14}
         y={height / 2}
         textAnchor="middle"
-        fill="rgba(255,255,255,0.4)"
+        fill="var(--color-ink-3)"
         fontSize={10}
         transform={`rotate(-90 14 ${height / 2})`}
       >

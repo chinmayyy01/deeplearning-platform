@@ -1,5 +1,6 @@
 "use client";
 import type { ConfusionMatrixData } from "@/lib/resultAnalytics";
+import { maxOf } from "@/lib/numeric";
 
 type ConfusionMatrixHeatmapProps = {
   data: ConfusionMatrixData;
@@ -9,7 +10,7 @@ export default function ConfusionMatrixHeatmap({
   data,
 }: ConfusionMatrixHeatmapProps) {
   const { labels, matrix } = data;
-  const max = Math.max(...matrix.flat(), 1);
+  const max = Math.max(maxOf(matrix.flat()), 1);
   const cellSize = 36;
   const labelPad = 48;
   const width = labelPad + labels.length * cellSize + 16;
@@ -17,9 +18,9 @@ export default function ConfusionMatrixHeatmap({
 
   const colorFor = (value: number) => {
     const t = value / max;
-    const r = Math.round(30 + t * 100);
-    const g = Math.round(20 + t * 60);
-    const b = Math.round(80 + t * 175);
+    const r = Math.round(24 + t * (124 - 24));
+    const g = Math.round(24 + t * (134 - 24));
+    const b = Math.round(34 + t * (232 - 34));
     return `rgb(${r},${g},${b})`;
   };
 
@@ -30,7 +31,7 @@ export default function ConfusionMatrixHeatmap({
           x={labelPad + (labels.length * cellSize) / 2}
           y={14}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.45)"
+          fill="var(--color-ink-3)"
           fontSize={10}
         >
           Predicted
@@ -39,7 +40,7 @@ export default function ConfusionMatrixHeatmap({
           x={12}
           y={labelPad + (labels.length * cellSize) / 2}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.45)"
+          fill="var(--color-ink-3)"
           fontSize={10}
           transform={`rotate(-90 12 ${labelPad + (labels.length * cellSize) / 2})`}
         >
@@ -51,7 +52,7 @@ export default function ConfusionMatrixHeatmap({
             x={labelPad + col * cellSize + cellSize / 2}
             y={labelPad - 8}
             textAnchor="middle"
-            fill="rgba(255,255,255,0.55)"
+            fill="var(--color-ink-2)"
             fontSize={9}
           >
             {label}
@@ -63,7 +64,7 @@ export default function ConfusionMatrixHeatmap({
             x={labelPad - 8}
             y={labelPad + row * cellSize + cellSize / 2 + 3}
             textAnchor="end"
-            fill="rgba(255,255,255,0.55)"
+            fill="var(--color-ink-2)"
             fontSize={9}
           >
             {label}
